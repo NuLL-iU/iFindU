@@ -494,3 +494,83 @@ footer {
 .status-pending {
     color: var(--light-text-color);
 }
+
+
+/* --- ↓↓↓ ハンバーガーメニューの基本スタイルを追加 ↓↓↓ --- */
+.hamburger-menu {
+    display: none; /* PCでは非表示 */
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 110;
+}
+
+.hamburger-menu span {
+    width: 30px;
+    height: 3px;
+    background-color: var(--text-color);
+    border-radius: 2px;
+    transition: all 0.3s ease-in-out;
+}
+
+
+/* --- ↓↓↓ ここからがスマホ用のデザイン！ (レスポンシブ対応) ↓↓↓ --- */
+@media (max-width: 768px) {
+    .hamburger-menu {
+        display: flex; /* スマホでは表示 */
+    }
+
+    .main-nav {
+        display: none; /* PC用のナビゲーションを隠す */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(255, 255, 255, 0.95);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 40px;
+    }
+
+    .main-nav.is-active {
+        display: flex; /* is-activeクラスがついたら表示 */
+    }
+
+    .hamburger-menu.is-active span:nth-child(1) {
+        transform: translateY(8.5px) rotate(45deg);
+    }
+    .hamburger-menu.is-active span:nth-child(2) {
+        opacity: 0;
+    }
+    .hamburger-menu.is-active span:nth-child(3) {
+        transform: translateY(-8.5px) rotate(-45deg);
+    }
+
+    .nav-separator {
+        display: none;
+    }
+
+    .hero h1 {
+        font-size: 36px;
+    }
+
+    .hero-buttons {
+        flex-direction: column;
+    }
+
+    .project-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .filter-form {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
