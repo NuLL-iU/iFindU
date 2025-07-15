@@ -1,0 +1,12 @@
+<%- include('partials/header') %>
+<div class="form-container">
+    <h2>ログイン</h2>
+    <form action="/login" method="POST">
+        <label for="email">メールアドレス</label>
+        <input type="email" id="email" name="email" required>
+        <label for="password">パスワード</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit" class="btn-submit">ログイン</button>
+    </form>
+</div>
+<%- include('partials/footer') %>

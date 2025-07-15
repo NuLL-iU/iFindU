@@ -1,0 +1,60 @@
+<%- include('partials/header') %>
+<div class="dashboard-container">
+    <h1><%= currentUser.username %>さんのダッシュボード</h1>
+
+    <div class="dashboard-section">
+        <h2>あなたが作成したプロジェクト</h2>
+        <% if (myProjects.length > 0) { %>
+            <% myProjects.forEach(project => { %>
+                <div class="dashboard-item"><a href="/projects/<%= project.id %>"><%= project.title %></a></div>
+            <% }) %>
+        <% } else { %>
+            <p>まだプロジェクトを作成していません。</p>
+        <% } %>
+    </div>
+
+    <div class="dashboard-section">
+        <h2>届いた参加リクエスト</h2>
+        <% if (receivedRequests.length > 0) { %>
+            <% receivedRequests.forEach(req => { %>
+                <div class="dashboard-item request-item">
+                    <span>「<%= req.title %>」に <strong><%= req.applicant_name %></strong> さんからリクエストが来ています。</span>
+                    <div class="request-actions">
+                        <% if (req.status === 'pending') { %>
+                            <form action="/requests/<%= req.id %>/approve" method="POST">
+                                <button type="submit" class="btn-approve">承認する</button>
+                            </form>
+                        <% } else { %>
+                            <span class="status-approved">承認済み</span>
+                            <span>Slack ID: <%= req.applicant_slack_id %></span>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p>まだリクエストを受け取っていません。</p>
+        <% } %>
+    </div>
+    
+    <div class="dashboard-section">
+        <h2>あなたが送った参加リクエスト</h2>
+        <% if (sentRequests.length > 0) { %>
+            <% sentRequests.forEach(req => { %>
+                <div class="dashboard-item request-item">
+                    <span>「<%= req.title %>」へのリクエスト</span>
+                     <div class="request-actions">
+                        <% if (req.status === 'approved') { %>
+                            <span class="status-approved">承認されました！</span>
+                            <span>相手のSlack ID: <%= req.creator_slack_id %></span>
+                        <% } else { %>
+                            <span class="status-pending">承認待ち</span>
+                        <% } %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <p>まだリクエストを送っていません。</p>
+        <% } %>
+    </div>
+</div>
+<%- include('partials/footer') %>

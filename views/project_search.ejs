@@ -1,0 +1,51 @@
+<%- include('partials/header') %>
+
+<div class="container page-container">
+    <h1 class="page-title">プロジェクトを探す</h1>
+
+    <section class="search-section">
+        <div class="container">
+            <form action="/project_search" method="GET" class="filter-form">
+                <label for="category">カテゴリで絞り込む:</label>
+                <div class="filter-select-wrapper">
+                    <select name="category" id="category" onchange="this.form.submit()">
+                        <% const categories = ['全て', 'スタートアップ', 'クリエイティブ', '社会貢献', '学び', 'サークル・学生団体', 'その他']; %>
+                        <% categories.forEach(cat => { %>
+                            <option value="<%= cat %>" <%= currentCategory === cat ? 'selected' : '' %>><%= cat %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <section class="projects-list-section">
+        <div class="project-grid">
+            <% if (projects.length > 0) { %>
+                <% projects.forEach(project => { %>
+                    <div class="project-card">
+                        <div class="card-header">
+                            <h3><%= project.title %></h3>
+                            <span class="category-tag"><%= project.category %></span>
+                        </div>
+                        <p class="description"><%= project.description %></p>
+                        <div class="skills-required">
+                            <% if (project.skills_required) { %>
+                                <% project.skills_required.split(',').forEach(skill => { %>
+                                    <span><%= skill.trim() %></span>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                        <div class="card-footer">
+                            <a href="/projects/<%= project.id %>" class="btn-details">詳細を見る</a>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p>このカテゴリのプロジェクトはまだありません。</p>
+            <% } %>
+        </div>
+    </section>
+</div>
+
+<%- include('partials/footer') %>

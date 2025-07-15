@@ -1,0 +1,34 @@
+<%- include('partials/header') %>
+
+<div class="form-container">
+    <h2>新しいプロジェクトを作成</h2>
+    <form action="/create" method="post">
+        <label for="title">プロジェクト名</label>
+        <input type="text" name="title" placeholder="革新的なフードデリバリーアプリ" required>
+
+        <label for="description">プロジェクトの詳細</label>
+        <textarea name="description" placeholder="このプロジェクトで何を実現したいか、どんな仲間を求めているかを具体的に書きましょう。" required></textarea>
+
+        <label for="category">カテゴリ</label>
+        <select name="category" required>
+            <option value="スタートアップ">スタートアップ</option>
+            <option value="クリエイティブ">クリエイティブ</option>
+            <option value="社会貢献">社会貢献</option>
+            <option value="学び">学び</option>
+            <option value="サークル・学生団体">サークル・学生団体</option>
+            <option value="その他">その他</option>
+        </select>
+
+        <label>要求スキル（複数選択可）</label>
+        <div class="checkbox-group">
+            <label><input type="checkbox" name="skills" value="プログラミング"> プログラミング</label>
+            <label><input type="checkbox" name="skills" value="デザイン"> デザイン</label>
+            <label><input type="checkbox" name="skills" value="マーケティング"> マーケティング</label>
+            <label><input type="checkbox" name="skills" value="語学力"> 語学力</label>
+        </div>
+
+        <button type="submit" class="btn btn-submit">プロジェクトを公開する</button>
+    </form>
+</div>
+
+<%- include('partials/footer') %>

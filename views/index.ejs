@@ -1,0 +1,47 @@
+<%- include('partials/header') %>
+
+<section class="hero">
+    <div class="container">
+        <h1>Find your "U"niverse.</h1>
+        <p>学生の「やりたい」を「みんなで」に変える場所</p>
+        
+        <div class="hero-buttons">
+            <a href="/project_search" class="btn-hero">プロジェクトを探しに行く →</a>
+            <a href="/create" class="btn-hero-secondary">仲間を集めてみる →</a>
+        </div>
+
+    </div>
+</section>
+
+<section class="featured-projects">
+    <div class="container">
+        <h2>注目のプロジェクト</h2>
+        <div class="project-grid">
+            <% if (projects && projects.length > 0) { %>
+                <% projects.forEach(project => { %>
+                    <div class="project-card">
+                        <div class="card-header">
+                            <h3><%= project.title %></h3>
+                            <span class="category-tag"><%= project.category %></span>
+                        </div>
+                        <p class="description"><%= project.description %></p>
+                        <div class="skills-required">
+                            <% if (project.skills_required) { %>
+                                <% project.skills_required.split(',').forEach(skill => { %>
+                                    <span><%= skill.trim() %></span>
+                                <% }) %>
+                            <% } %>
+                        </div>
+                        <div class="card-footer">
+                            <a href="/projects/<%= project.id %>" class="btn-details">詳細を見る</a>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <p>まだプロジェクトがありません。最初のプロジェクトを投稿しよう！</p>
+            <% } %>
+        </div>
+    </div>
+</section>
+
+<%- include('partials/footer') %>

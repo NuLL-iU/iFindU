@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>i Find U</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <a href="/" class="logo-link"><div class="logo">i Find U</div></a>
+            <nav>
+                <a href="/project_search" class="btn-nav-main">プロジェクトを探す</a>
+                <a href="/create" class="btn-nav-main">仲間を集う</a>
+                
+                <div class="nav-separator"></div>
+
+                <% if (currentUser) { %>
+                    <a href="/dashboard">ダッシュボード</a>
+                    <a href="/logout">ログアウト</a>
+                <% } else { %>
+                    <a href="/login" class="btn-login">ログイン</a>
+                    <a href="/register" class="btn-signup">ユーザー登録</a>
+                <% } %>
+            </nav>
+        </div>
+    </header>
+    <main>

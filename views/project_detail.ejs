@@ -1,0 +1,30 @@
+<%- include('partials/header') %>
+<div class="project-detail-container">
+    <div class="project-detail-header">
+        <h1><%= project.title %></h1>
+        <span class="category-tag"><%= project.category %></span>
+    </div>
+    <div class="project-creator">
+        <span>作成者: <%= project.creator_name %></span>
+    </div>
+    <div class="project-description">
+        <p><%= project.description %></p>
+    </div>
+    <div class="project-skills">
+        <h4>必要なスキル:</h4>
+        <div class="skills-required">
+             <% if (project.skills_required) { %>
+                <% project.skills_required.split(',').forEach(skill => { %>
+                    <span><%= skill.trim() %></span>
+                <% }) %>
+            <% } %>
+        </div>
+    </div>
+
+    <% if (currentUser && currentUser.id !== project.creator_id) { %>
+        <form action="/projects/<%= project.id %>/apply" method="POST" class="apply-form">
+            <button type="submit" class="btn-submit">このプロジェクトに参加リクエストを送る</button>
+        </form>
+    <% } %>
+</div>
+<%- include('partials/footer') %>
