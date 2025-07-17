@@ -16,5 +16,8 @@
     "express": "^4.19.2",
     "express-session": "^1.18.0",
     "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "@flydotio/dockerfile": "^0.7.10"
   }
 }
