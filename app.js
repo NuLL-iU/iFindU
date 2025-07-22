@@ -8,13 +8,17 @@ const app = express();
 const port = 3000;
 const saltRounds = 10;
 
-// セッションの設定
+// --- ↓↓↓ セッションの設定を更新！ ↓↓↓ ---
 app.use(session({
-    secret: 'your_secret_key', // 実際にはもっと複雑なキーにしてください
+    secret: 'your_secret_key_2025', // 秘密鍵はもっと複雑なものにしよう
     resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // HTTPSでない場合はfalse
+    saveUninitialized: false, // ログインしない限りセッションを作らない
+    cookie: {
+        secure: false, // HTTPSでない場合はfalse
+        maxAge: 1000 * 60 * 60 * 24 * 14 // 14日間有効
+    }
 }));
+// --- ↑↑↑ ここまで ↑↑↑ ---
 
 // データベースの設定
 const db = new sqlite3.Database('./ifindu.db', (err) => {
@@ -29,7 +33,7 @@ db.serialize(() => {
         username TEXT NOT NULL UNIQUE,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        slack_id TEXT
+        slack_id TEXT NOT NULL
     )`);
     db.run(`CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,7 +70,7 @@ app.use((req, res, next) => {
 
 // --- ルーティング ---
 
-// トップページ（注目のプロジェクトを3件だけ表示）
+// トップページ
 app.get('/', (req, res) => {
     const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id ORDER BY projects.created_at DESC LIMIT 3";
     db.all(sql, [], (err, rows) => {
@@ -98,6 +102,14 @@ app.get('/project_search', (req, res) => {
 app.get('/register', (req, res) => { res.render('register'); });
 app.post('/register', async (req, res) => {
     const { username, email, password, slack_id } = req.body;
+
+    // --- ↓↓↓ 必須項目のチェックを追加！ ↓↓↓ ---
+    if (!username || !email || !password || !slack_id) {
+        // もしどれか一つでも空なら、エラーメッセージと共に登録ページに戻す（今回はシンプルにリダイレクト）
+        return res.redirect('/register');
+    }
+    // --- ↑↑↑ ここまで ↑↑↑ ---
+
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const sql = 'INSERT INTO users (username, email, password, slack_id) VALUES (?, ?, ?, ?)';
     db.run(sql, [username, email, hashedPassword, slack_id], function(err) {
@@ -204,7 +216,6 @@ app.post('/requests/:id/approve', (req, res) => {
 
 
 // サーバーの起動
-app.listen(port, () => {
+app.listen(port, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${port}`);
 });
-
