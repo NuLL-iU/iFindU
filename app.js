@@ -8,25 +8,23 @@ const app = express();
 const port = 3000;
 const saltRounds = 10;
 
-// --- ↓↓↓ セッションの設定を更新！ ↓↓↓ ---
 app.use(session({
-    secret: 'your_secret_key_2025', // 秘密鍵はもっと複雑なものにしよう
+    secret: 'your_secret_key_2025',
     resave: false,
-    saveUninitialized: false, // ログインしない限りセッションを作らない
+    saveUninitialized: false,
     cookie: {
-        secure: false, // HTTPSでない場合はfalse
-        maxAge: 1000 * 60 * 60 * 24 * 14 // 14日間有効
+        secure: false,
+        maxAge: 1000 * 60 * 60 * 24 * 14
     }
 }));
-// --- ↑↑↑ ここまで ↑↑↑ ---
 
-// データベースの設定
-const db = new sqlite3.Database('./ifindu.db', (err) => {
+// ↓↓↓ ここが大事な修正箇所！ ↓↓↓
+const dbPath = '/data/ifindu.db';
+const db = new sqlite3.Database(dbPath, (err) => {
     if (err) { console.error(err.message); }
     console.log('Connected to the ifindu database.');
 });
 
-// テーブル作成
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -55,22 +53,16 @@ db.serialize(() => {
     )`);
 });
 
-
-// ミドルウェアの設定
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 
-// 全てのルートでユーザー情報をテンプレートに渡すミドルウェア
 app.use((req, res, next) => {
     res.locals.currentUser = req.session.user;
     next();
 });
 
-// --- ルーティング ---
-
-// トップページ
 app.get('/', (req, res) => {
     const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id ORDER BY projects.created_at DESC LIMIT 3";
     db.all(sql, [], (err, rows) => {
@@ -82,7 +74,6 @@ app.get('/', (req, res) => {
     });
 });
 
-// プロジェクト一覧ページ
 app.get('/project_search', (req, res) => {
     let sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id";
     const params = [];
@@ -98,18 +89,12 @@ app.get('/project_search', (req, res) => {
     });
 });
 
-// ユーザー登録ページ
 app.get('/register', (req, res) => { res.render('register'); });
 app.post('/register', async (req, res) => {
     const { username, email, password, slack_id } = req.body;
-
-    // --- ↓↓↓ 必須項目のチェックを追加！ ↓↓↓ ---
     if (!username || !email || !password || !slack_id) {
-        // もしどれか一つでも空なら、エラーメッセージと共に登録ページに戻す（今回はシンプルにリダイレクト）
         return res.redirect('/register');
     }
-    // --- ↑↑↑ ここまで ↑↑↑ ---
-
     const hashedPassword = await bcrypt.hash(password, saltRounds);
     const sql = 'INSERT INTO users (username, email, password, slack_id) VALUES (?, ?, ?, ?)';
     db.run(sql, [username, email, hashedPassword, slack_id], function(err) {
@@ -121,7 +106,6 @@ app.post('/register', async (req, res) => {
     });
 });
 
-// ログインページ
 app.get('/login', (req, res) => { res.render('login'); });
 app.post('/login', (req, res) => {
     const { email, password } = req.body;
@@ -135,7 +119,6 @@ app.post('/login', (req, res) => {
     });
 });
 
-// ログアウト
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) { return res.redirect('/'); }
@@ -144,7 +127,6 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// プロジェクト作成ページ
 app.get('/create', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
     res.render('create_project');
@@ -160,7 +142,6 @@ app.post('/create', (req, res) => {
     });
 });
 
-// プロジェクト詳細ページ
 app.get('/projects/:id', (req, res) => {
     const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id WHERE projects.id = ?";
     db.get(sql, [req.params.id], (err, project) => {
@@ -169,7 +150,6 @@ app.get('/projects/:id', (req, res) => {
     });
 });
 
-// 参加リクエスト処理
 app.post('/projects/:id/apply', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
     const sql = 'INSERT INTO requests (project_id, applicant_id) VALUES (?, ?)';
@@ -179,10 +159,8 @@ app.post('/projects/:id/apply', (req, res) => {
     });
 });
 
-// ダッシュボード
 app.get('/dashboard', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
-
     const myProjectsSql = "SELECT * FROM projects WHERE creator_id = ?";
     const receivedRequestsSql = `
         SELECT requests.*, projects.title, users.username as applicant_name, users.slack_id as applicant_slack_id
@@ -204,7 +182,6 @@ app.get('/dashboard', (req, res) => {
     });});});
 });
 
-// リクエスト承認処理
 app.post('/requests/:id/approve', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
     const sql = "UPDATE requests SET status = 'approved' WHERE id = ?";
@@ -213,7 +190,6 @@ app.post('/requests/:id/approve', (req, res) => {
         res.redirect('/dashboard');
     });
 });
-
 
 // サーバーの起動
 app.listen(port, '0.0.0.0', () => {
