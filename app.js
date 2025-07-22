@@ -3,28 +3,36 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session); // <-- この行を追加！
 
 const app = express();
 const port = 3000;
 const saltRounds = 10;
 
+// --- ↓↓↓ セッションの設定を、データベースを使うように変更！ ↓↓↓ ---
 app.use(session({
-    secret: 'your_secret_key_2025',
+    store: new SQLiteStore({
+        db: 'ifindu.db',      // データベースファイル名
+        dir: '/data'        // 保存場所（Fly.ioの専用ディスク）
+    }),
+    secret: 'your_secret_key_2025', // 秘密鍵はもっと複雑なものにしよう
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false,
-        maxAge: 1000 * 60 * 60 * 24 * 14
+        secure: 'auto', // 本番環境では自動で安全な通信になる
+        maxAge: 1000 * 60 * 60 * 24 * 14 // 14日間有効
     }
 }));
+// --- ↑↑↑ ここまで ---
 
-// ↓↓↓ ここが大事な修正箇所！ ↓↓↓
+// データベースの設定
 const dbPath = '/data/ifindu.db';
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) { console.error(err.message); }
     console.log('Connected to the ifindu database.');
 });
 
+// (これ以降のコードは変更なし)
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
