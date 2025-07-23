@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<div class="form-container">
+    <h2>プロジェクトを編集する</h2>
+    <form action="/projects/<%= project.id %>/edit" method="post">
+        <label for="title">プロジェクト名</label>
+        <input type="text" name="title" value="<%= project.title %>" required>
+
+        <label for="description">プロジェクトの詳細</label>
+        <textarea name="description" required><%= project.description %></textarea>
+
+        <label for="category">カテゴリ</label>
+        <select name="category" required>
+            <% const categories = ['スタートアップ', 'クリエイティブ', '社会貢献', '学び', 'サークル・学生団体', 'その他']; %>
+            <% categories.forEach(cat => { %>
+                <option value="<%= cat %>" <%= project.category === cat ? 'selected' : '' %>><%= cat %></option>
+            <% }) %>
+        </select>
+
+        <label>要求スキル（複数選択可）</label>
+        <div class="checkbox-group">
+            <% const currentSkills = project.skills_required.split(',').map(s => s.trim()); %>
+            <% const allSkills = ['プログラミング', 'デザイン', 'マーケティング', '語学力']; %>
+            <% allSkills.forEach(skill => { %>
+                <label><input type="checkbox" name="skills" value="<%= skill %>" <%= currentSkills.includes(skill) ? 'checked' : '' %>> <%= skill %></label>
+            <% }) %>
+        </div>
+
+        <button type="submit" class="btn-submit">更新する</button>
+    </form>
+
+    <form action="/projects/<%= project.id %>/delete" method="post" onsubmit="return confirm('本当にこのプロジェクトを削除しますか？');">
+        <button type="submit" class="btn-delete">このプロジェクトを削除する</button>
+    </form>
+</div>
+
+<%- include('partials/footer') %>

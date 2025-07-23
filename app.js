@@ -3,36 +3,32 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session); // <-- この行を追加！
+const SQLiteStore = require('connect-sqlite3')(session);
 
 const app = express();
 const port = 3000;
 const saltRounds = 10;
 
-// --- ↓↓↓ セッションの設定を、データベースを使うように変更！ ↓↓↓ ---
 app.use(session({
     store: new SQLiteStore({
-        db: 'ifindu.db',      // データベースファイル名
-        dir: '/data'        // 保存場所（Fly.ioの専用ディスク）
+        db: 'ifindu.db',
+        dir: '/data'
     }),
-    secret: 'your_secret_key_2025', // 秘密鍵はもっと複雑なものにしよう
+    secret: 'your_secret_key_2025',
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: 'auto', // 本番環境では自動で安全な通信になる
-        maxAge: 1000 * 60 * 60 * 24 * 14 // 14日間有効
+        secure: 'auto',
+        maxAge: 1000 * 60 * 60 * 24 * 14
     }
 }));
-// --- ↑↑↑ ここまで ---
 
-// データベースの設定
 const dbPath = '/data/ifindu.db';
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) { console.error(err.message); }
     console.log('Connected to the ifindu database.');
 });
 
-// (これ以降のコードは変更なし)
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -70,6 +66,8 @@ app.use((req, res, next) => {
     res.locals.currentUser = req.session.user;
     next();
 });
+
+// --- ルーティング ---
 
 app.get('/', (req, res) => {
     const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id ORDER BY projects.created_at DESC LIMIT 3";
@@ -167,6 +165,64 @@ app.post('/projects/:id/apply', (req, res) => {
     });
 });
 
+// --- ↓↓↓ ここからが新しい機能！ ↓↓↓ ---
+
+// プロジェクト編集ページ表示
+app.get('/projects/:id/edit', (req, res) => {
+    if (!req.session.user) { return res.redirect('/login'); }
+    const sql = "SELECT * FROM projects WHERE id = ?";
+    db.get(sql, [req.params.id], (err, project) => {
+        if (err || !project) { return res.redirect('/'); }
+        // 本人確認
+        if (project.creator_id !== req.session.user.id) {
+            return res.redirect('/');
+        }
+        res.render('edit_project', { project: project });
+    });
+});
+
+// プロジェクト編集処理
+app.post('/projects/:id/edit', (req, res) => {
+    if (!req.session.user) { return res.redirect('/login'); }
+    const { title, description, category, skills } = req.body;
+    const skillsString = Array.isArray(skills) ? skills.join(', ') : (skills || '');
+    
+    // 先に本人確認
+    const checkSql = "SELECT creator_id FROM projects WHERE id = ?";
+    db.get(checkSql, [req.params.id], (err, project) => {
+        if (err || !project || project.creator_id !== req.session.user.id) {
+            return res.redirect('/');
+        }
+        // 本人確認OKなら更新
+        const updateSql = `UPDATE projects SET title = ?, description = ?, category = ?, skills_required = ? WHERE id = ?`;
+        db.run(updateSql, [title, description, category, skillsString, req.params.id], function(err) {
+            if (err) { return console.log(err.message); }
+            res.redirect(`/projects/${req.params.id}`);
+        });
+    });
+});
+
+// プロジェクト削除処理
+app.post('/projects/:id/delete', (req, res) => {
+    if (!req.session.user) { return res.redirect('/login'); }
+
+    // 先に本人確認
+    const checkSql = "SELECT creator_id FROM projects WHERE id = ?";
+    db.get(checkSql, [req.params.id], (err, project) => {
+        if (err || !project || project.creator_id !== req.session.user.id) {
+            return res.redirect('/');
+        }
+        // 本人確認OKなら削除
+        const deleteSql = "DELETE FROM projects WHERE id = ?";
+        db.run(deleteSql, [req.params.id], function(err) {
+            if (err) { return console.log(err.message); }
+            res.redirect('/dashboard');
+        });
+    });
+});
+
+// --- ↑↑↑ ここまで ---
+
 app.get('/dashboard', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
     const myProjectsSql = "SELECT * FROM projects WHERE creator_id = ?";
@@ -199,7 +255,6 @@ app.post('/requests/:id/approve', (req, res) => {
     });
 });
 
-// サーバーの起動
 app.listen(port, '0.0.0.0', () => {
     console.log(`Server running at http://localhost:${port}`);
 });

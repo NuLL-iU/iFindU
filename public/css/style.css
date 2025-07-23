@@ -574,3 +574,43 @@ footer {
         gap: 20px;
     }
 }
+
+
+
+.btn-edit {
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
+    margin-top: 40px;
+    padding: 15px;
+    background-color: var(--primary-color);
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+.btn-edit:hover {
+    opacity: 0.9;
+}
+
+.btn-delete {
+    width: 100%;
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #EF4444; /* 赤色 */
+    color: #FFFFFF;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.btn-delete:hover {
+    background-color: #DC2626;
+}

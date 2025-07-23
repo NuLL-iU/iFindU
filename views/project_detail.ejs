@@ -21,10 +21,14 @@
         </div>
     </div>
 
-    <% if (currentUser && currentUser.id !== project.creator_id) { %>
-        <form action="/projects/<%= project.id %>/apply" method="POST" class="apply-form">
-            <button type="submit" class="btn-submit">このプロジェクトに参加リクエストを送る</button>
-        </form>
+    <% if (currentUser) { %>
+        <% if (currentUser.id === project.creator_id) { %>
+            <a href="/projects/<%= project.id %>/edit" class="btn-edit">このプロジェクトを編集する</a>
+        <% } else { %>
+            <form action="/projects/<%= project.id %>/apply" method="POST" class="apply-form">
+                <button type="submit" class="btn-submit">このプロジェクトに参加リクエストを送る</button>
+            </form>
+        <% } %>
     <% } %>
-</div>
+    </div>
 <%- include('partials/footer') %>
