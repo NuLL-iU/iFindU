@@ -9,10 +9,15 @@ const app = express();
 const port = 3000;
 const saltRounds = 10;
 
+// Fly.io上（本番）か、自分のPC（開発）かを見分ける
+const isProduction = process.env.FLY_APP_NAME !== undefined;
+
+// --- ↓↓↓ このセッション設定の部分を修正したよ！ ↓↓↓ ---
 app.use(session({
     store: new SQLiteStore({
         db: 'ifindu.db',
-        dir: '/data'
+        // 本番なら'/data'に、開発ならカレントディレクトリ('.')に保存
+        dir: isProduction ? '/data' : '.'
     }),
     secret: 'your_secret_key_2025',
     resave: false,
@@ -22,17 +27,13 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 24 * 14
     }
 }));
+// --- ↑↑↑ ここまで ---
 
-// --- ↓↓↓ この部分を賢くしたよ！ ↓↓↓ ---
-// Fly.io上（本番）か、自分のPC（開発）かを見分ける
-const isProduction = process.env.FLY_APP_NAME !== undefined;
 const dbPath = isProduction ? '/data/ifindu.db' : './ifindu.db';
-
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) { console.error(err.message); }
     console.log(`Connected to the database at ${dbPath}`);
 });
-// --- ↑↑↑ ここまで ---
 
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
