@@ -23,13 +23,17 @@ app.use(session({
     }
 }));
 
-const dbPath = '/data/ifindu.db';
+// --- ↓↓↓ この部分を賢くしたよ！ ↓↓↓ ---
+// Fly.io上（本番）か、自分のPC（開発）かを見分ける
+const isProduction = process.env.FLY_APP_NAME !== undefined;
+const dbPath = isProduction ? '/data/ifindu.db' : './ifindu.db';
+
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) { console.error(err.message); }
-    console.log('Connected to the ifindu database.');
+    console.log(`Connected to the database at ${dbPath}`);
 });
+// --- ↑↑↑ ここまで ---
 
-// --- ↓↓↓ usersテーブルに university を追加！ ↓↓↓ ---
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,8 +43,6 @@ db.serialize(() => {
         slack_id TEXT NOT NULL,
         university TEXT NOT NULL 
     )`);
-    // --- ↑↑↑ ここまで ---
-
     db.run(`CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -71,7 +73,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- ルーティング ---
+// --- (これ以降のコードは変更なし) ---
 
 app.get('/', (req, res) => {
     const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id ORDER BY projects.created_at DESC LIMIT 3";
@@ -101,15 +103,11 @@ app.get('/project_search', (req, res) => {
 
 app.get('/register', (req, res) => { res.render('register'); });
 app.post('/register', async (req, res) => {
-    // --- ↓↓↓ university を受け取るように変更！ ↓↓↓ ---
     const { username, email, password, slack_id, university } = req.body;
     if (!username || !email || !password || !slack_id || !university) {
         return res.redirect('/register');
     }
-    // --- ↑↑↑ ここまで ---
-
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    // --- ↓↓↓ university を保存するように変更！ ↓↓↓ ---
     const sql = 'INSERT INTO users (username, email, password, slack_id, university) VALUES (?, ?, ?, ?, ?)';
     db.run(sql, [username, email, hashedPassword, slack_id, university], function(err) {
         if (err) {
