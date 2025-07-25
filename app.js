@@ -29,14 +29,18 @@ const db = new sqlite3.Database(dbPath, (err) => {
     console.log('Connected to the ifindu database.');
 });
 
+// --- ↓↓↓ usersテーブルに university を追加！ ↓↓↓ ---
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         email TEXT NOT NULL UNIQUE,
         password TEXT NOT NULL,
-        slack_id TEXT NOT NULL
+        slack_id TEXT NOT NULL,
+        university TEXT NOT NULL 
     )`);
+    // --- ↑↑↑ ここまで ---
+
     db.run(`CREATE TABLE IF NOT EXISTS projects (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
@@ -97,13 +101,17 @@ app.get('/project_search', (req, res) => {
 
 app.get('/register', (req, res) => { res.render('register'); });
 app.post('/register', async (req, res) => {
-    const { username, email, password, slack_id } = req.body;
-    if (!username || !email || !password || !slack_id) {
+    // --- ↓↓↓ university を受け取るように変更！ ↓↓↓ ---
+    const { username, email, password, slack_id, university } = req.body;
+    if (!username || !email || !password || !slack_id || !university) {
         return res.redirect('/register');
     }
+    // --- ↑↑↑ ここまで ---
+
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const sql = 'INSERT INTO users (username, email, password, slack_id) VALUES (?, ?, ?, ?)';
-    db.run(sql, [username, email, hashedPassword, slack_id], function(err) {
+    // --- ↓↓↓ university を保存するように変更！ ↓↓↓ ---
+    const sql = 'INSERT INTO users (username, email, password, slack_id, university) VALUES (?, ?, ?, ?, ?)';
+    db.run(sql, [username, email, hashedPassword, slack_id, university], function(err) {
         if (err) {
             console.error(err.message);
             return res.redirect('/register');
@@ -165,15 +173,11 @@ app.post('/projects/:id/apply', (req, res) => {
     });
 });
 
-// --- ↓↓↓ ここからが新しい機能！ ↓↓↓ ---
-
-// プロジェクト編集ページ表示
 app.get('/projects/:id/edit', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
     const sql = "SELECT * FROM projects WHERE id = ?";
     db.get(sql, [req.params.id], (err, project) => {
         if (err || !project) { return res.redirect('/'); }
-        // 本人確認
         if (project.creator_id !== req.session.user.id) {
             return res.redirect('/');
         }
@@ -181,19 +185,16 @@ app.get('/projects/:id/edit', (req, res) => {
     });
 });
 
-// プロジェクト編集処理
 app.post('/projects/:id/edit', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
     const { title, description, category, skills } = req.body;
     const skillsString = Array.isArray(skills) ? skills.join(', ') : (skills || '');
     
-    // 先に本人確認
     const checkSql = "SELECT creator_id FROM projects WHERE id = ?";
     db.get(checkSql, [req.params.id], (err, project) => {
         if (err || !project || project.creator_id !== req.session.user.id) {
             return res.redirect('/');
         }
-        // 本人確認OKなら更新
         const updateSql = `UPDATE projects SET title = ?, description = ?, category = ?, skills_required = ? WHERE id = ?`;
         db.run(updateSql, [title, description, category, skillsString, req.params.id], function(err) {
             if (err) { return console.log(err.message); }
@@ -202,17 +203,14 @@ app.post('/projects/:id/edit', (req, res) => {
     });
 });
 
-// プロジェクト削除処理
 app.post('/projects/:id/delete', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
 
-    // 先に本人確認
     const checkSql = "SELECT creator_id FROM projects WHERE id = ?";
     db.get(checkSql, [req.params.id], (err, project) => {
         if (err || !project || project.creator_id !== req.session.user.id) {
             return res.redirect('/');
         }
-        // 本人確認OKなら削除
         const deleteSql = "DELETE FROM projects WHERE id = ?";
         db.run(deleteSql, [req.params.id], function(err) {
             if (err) { return console.log(err.message); }
@@ -220,8 +218,6 @@ app.post('/projects/:id/delete', (req, res) => {
         });
     });
 });
-
-// --- ↑↑↑ ここまで ---
 
 app.get('/dashboard', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
