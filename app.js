@@ -9,14 +9,11 @@ const app = express();
 const port = 3000;
 const saltRounds = 10;
 
-// Fly.io上（本番）か、自分のPC（開発）かを見分ける
 const isProduction = process.env.FLY_APP_NAME !== undefined;
 
-// --- ↓↓↓ このセッション設定の部分を修正したよ！ ↓↓↓ ---
 app.use(session({
     store: new SQLiteStore({
         db: 'ifindu.db',
-        // 本番なら'/data'に、開発ならカレントディレクトリ('.')に保存
         dir: isProduction ? '/data' : '.'
     }),
     secret: 'your_secret_key_2025',
@@ -27,7 +24,6 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 24 * 14
     }
 }));
-// --- ↑↑↑ ここまで ---
 
 const dbPath = isProduction ? '/data/ifindu.db' : './ifindu.db';
 const db = new sqlite3.Database(dbPath, (err) => {
@@ -74,7 +70,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// --- (これ以降のコードは変更なし) ---
+// --- ルーティング ---
 
 app.get('/', (req, res) => {
     const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id ORDER BY projects.created_at DESC LIMIT 3";
@@ -127,7 +123,7 @@ app.post('/login', (req, res) => {
         if (err || !user || !await bcrypt.compare(password, user.password)) {
             return res.redirect('/login');
         }
-        req.session.user = { id: user.id, username: user.username, slack_id: user.slack_id };
+        req.session.user = { id: user.id, username: user.username };
         res.redirect('/dashboard');
     });
 });
@@ -155,8 +151,9 @@ app.post('/create', (req, res) => {
     });
 });
 
+// --- ↓↓↓ project_detail のSQLに university を追加！ ↓↓↓ ---
 app.get('/projects/:id', (req, res) => {
-    const sql = "SELECT projects.*, users.username as creator_name FROM projects JOIN users ON projects.creator_id = users.id WHERE projects.id = ?";
+    const sql = "SELECT projects.*, users.username as creator_name, users.university as creator_university FROM projects JOIN users ON projects.creator_id = users.id WHERE projects.id = ?";
     db.get(sql, [req.params.id], (err, project) => {
         if (err || !project) { return res.redirect('/'); }
         res.render('project_detail', { project: project });
@@ -204,7 +201,6 @@ app.post('/projects/:id/edit', (req, res) => {
 
 app.post('/projects/:id/delete', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }
-
     const checkSql = "SELECT creator_id FROM projects WHERE id = ?";
     db.get(checkSql, [req.params.id], (err, project) => {
         if (err || !project || project.creator_id !== req.session.user.id) {
@@ -217,6 +213,43 @@ app.post('/projects/:id/delete', (req, res) => {
         });
     });
 });
+
+// --- ↓↓↓ プロフィール編集機能を追加！ ↓↓↓ ---
+app.get('/profile/edit', (req, res) => {
+    if (!req.session.user) { return res.redirect('/login'); }
+    const sql = "SELECT id, username, email, slack_id, university FROM users WHERE id = ?";
+    db.get(sql, [req.session.user.id], (err, user) => {
+        if (err || !user) { return res.redirect('/'); }
+        res.render('edit_profile', { user: user });
+    });
+});
+
+app.post('/profile/edit', async (req, res) => {
+    if (!req.session.user) { return res.redirect('/login'); }
+    const { username, email, slack_id, university, password } = req.body;
+
+    // パスワードが入力された場合のみ、パスワードも更新する
+    if (password) {
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        const sql = `UPDATE users SET username = ?, email = ?, slack_id = ?, university = ?, password = ? WHERE id = ?`;
+        db.run(sql, [username, email, slack_id, university, hashedPassword, req.session.user.id], function(err) {
+            if (err) { console.error(err.message); }
+            // セッション情報も更新
+            req.session.user.username = username;
+            res.redirect('/dashboard');
+        });
+    } else {
+        // パスワードが入力されなかった場合
+        const sql = `UPDATE users SET username = ?, email = ?, slack_id = ?, university = ? WHERE id = ?`;
+        db.run(sql, [username, email, slack_id, university, req.session.user.id], function(err) {
+            if (err) { console.error(err.message); }
+            // セッション情報も更新
+            req.session.user.username = username;
+            res.redirect('/dashboard');
+        });
+    }
+});
+// --- ↑↑↑ ここまで ---
 
 app.get('/dashboard', (req, res) => {
     if (!req.session.user) { return res.redirect('/login'); }

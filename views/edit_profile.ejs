@@ -1,0 +1,28 @@
+<%- include('partials/header') %>
+
+<div class="form-container">
+    <h2>プロフィールを編集</h2>
+    <form action="/profile/edit" method="post">
+        <label for="username">ユーザー名</label>
+        <input type="text" name="username" value="<%= user.username %>" required>
+
+        <label for="university">大学名</label>
+        <input type="text" name="university" value="<%= user.university %>" required>
+
+        <label for="email">メールアドレス</label>
+        <input type="email" name="email" value="<%= user.email %>" required>
+
+        <label for="slack_id">Slack メンバーID</label>
+        <input type="text" name="slack_id" value="<%= user.slack_id %>" required>
+
+        <hr class="form-separator">
+
+        <p class="form-note">パスワードを変更する場合のみ入力してください</p>
+        <label for="password">新しいパスワード</label>
+        <input type="password" name="password">
+
+        <button type="submit" class="btn-submit">更新する</button>
+    </form>
+</div>
+
+<%- include('partials/footer') %>

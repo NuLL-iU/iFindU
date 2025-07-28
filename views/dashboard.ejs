@@ -1,6 +1,9 @@
 <%- include('partials/header') %>
 <div class="dashboard-container">
-    <h1><%= currentUser.username %>さんのダッシュボード</h1>
+    <div class="dashboard-header">
+        <h1><%= currentUser.username %>さんのダッシュボード</h1>
+        <a href="/profile/edit" class="btn-edit-profile">プロフィールを編集</a>
+    </div>
 
     <div class="dashboard-section">
         <h2>あなたが作成したプロジェクト</h2>
